@@ -1,31 +1,37 @@
-const mongoose = require('mongoose');
+const httpConstants = require('http2').constants;
 const User = require('../models/user');
+
+const {
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_NOT_FOUND,
+} = httpConstants;
 
 const getUsers = async (req, res, next) => {
   try {
     const users = await User.find({});
-    res.send(users);
+    if (users) {
+      res.send(users);
+    } else {
+      res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Пользователей не найдено' });
+    }
   } catch (err) {
     next(err);
   }
 };
 
-const getUser = (req, res, next) => {
-  const { userId } = req.params;
-
-  User.findById(userId)
-    .orFail(() => new Error('NotValid'))
-    .then((user) => res.send(user))
-    .catch((err) => {
-      if (err.message === 'NotValid') {
-        res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
-      } if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Переданы некорректные данные' });
-      } else {
-        next(err);
-      }
-    });
-}; //
+const getUser = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+    if (user) {
+      res.send(user);
+    } else {
+      res.status(HTTP_STATUS_NOT_FOUND).send({ message: ' Пользователь по указанному id не найден' });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
 
 const createUser = async (req, res, next) => {
   try {
@@ -33,9 +39,8 @@ const createUser = async (req, res, next) => {
     const user = await User.create({ name, about, avatar });
     res.send(user);
   } catch (err) {
-    if (err instanceof mongoose.Error.ValidationError) {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
-      return;
+    if (err.name === 'ValidationError') {
+      res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Переданы некорректные данные при создании карточки' });
     }
     next(err);
   }
@@ -45,39 +50,47 @@ const updateUser = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const { name, about } = req.body;
-    if (!name && !about) {
-      res.status(400).send({ message: 'Переданы некорректные данные' });
-      return;
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { name, about },
+      { new: true, runValidators: true },
+    );
+    if (user) {
+      res.send(user);
+    } else {
+      res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Пользователь с указанным _id не найден' });
     }
-    const user = await User.findByIdAndUpdate(userId, { name, about }, { new: true })
-      .orFail(() => new Error('NotValid'));
-    res.send(user);
   } catch (err) {
-    if (err.message === 'NotValid') {
-      res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+    if (err.name === 'ValidationError') {
+      res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Переданы некорректные данные при обновлении профиля' });
     } else {
       next(err);
     }
   }
 };
 
-const updateAvatar = (req, res, next) => {
-  const userId = req.user._id;
-  const { avatar } = req.body;
-  if (!avatar) {
-    res.status(400).send({ message: 'Переданы некорректные данные' });
-    return;
+const updateAvatar = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const { avatar } = req.body;
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { avatar },
+      { new: true, runValidators: true },
+    );
+
+    if (user) {
+      res.send(user);
+    } else {
+      res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Пользователь с указанным _id не найден' });
+    }
+  } catch (err) {
+    if (err.name === 'ValidationError') {
+      res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Переданы некорректные данные при обновлении аватара' });
+    } else {
+      next(err);
+    }
   }
-  User.findByIdAndUpdate(userId, { avatar }, { new: true })
-    .orFail(() => new Error('NotValid'))
-    .then((user) => res.send(user))
-    .catch((err) => {
-      if (err.message === 'NotValid') {
-        res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
-      } else {
-        next(err);
-      }
-    });
 };
 
 module.exports = {

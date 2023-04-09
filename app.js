@@ -1,9 +1,9 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
 const app = express();
 const PORT = 3000;
+const router = require('./routes');
 
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb').then(() => {
   console.log('Connecting mongo');
@@ -11,7 +11,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/mestodb').then(() => {
   console.log(`Error ${err}`);
 });
 
-app.use(bodyParser.json());
+app.use(express.json());
 
 app.use((req, res, next) => {
   req.user = {
@@ -19,11 +19,12 @@ app.use((req, res, next) => {
   };
   next();
 });
-app.use('/users', require('./routes/users'));
-app.use('/cards', require('./routes/cards'));
+app.use('/', router);
+// app.use('/users', require('./routes/users'));
+// app.use('/cards', require('./routes/cards'));
 
 app.use((err, req, res, next) => {
-  res.status(500).send('Произошла ошибка');
+  res.status(500).send({ message: 'Произошла ошибка' });
 });
 
 app.listen(PORT, () => {
