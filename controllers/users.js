@@ -9,11 +9,7 @@ const {
 const getUsers = async (req, res, next) => {
   try {
     const users = await User.find({});
-    if (users) {
-      res.send(users);
-    } else {
-      res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Пользователей не найдено' });
-    }
+    res.send(users);
   } catch (err) {
     next(err);
   }
@@ -26,10 +22,14 @@ const getUser = async (req, res, next) => {
     if (user) {
       res.send(user);
     } else {
-      res.status(HTTP_STATUS_NOT_FOUND).send({ message: ' Пользователь по указанному id не найден' });
+      res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Пользователь по указанному id не найден' });
     }
   } catch (err) {
-    next(err);
+    if (err.name === 'CastError') {
+      res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Невалидный id' });
+    } else {
+      next(err);
+    }
   }
 };
 
@@ -41,8 +41,9 @@ const createUser = async (req, res, next) => {
   } catch (err) {
     if (err.name === 'ValidationError') {
       res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Переданы некорректные данные при создании карточки' });
+    } else {
+      next(err);
     }
-    next(err);
   }
 };
 

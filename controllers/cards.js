@@ -10,11 +10,7 @@ const getCards = async (req, res, next) => {
   try {
     const cards = await Card.find({})
       .populate(['owner', 'likes']);
-    if (cards) {
-      res.send(cards);
-    } else {
-      res.status(HTTP_STATUS_NOT_FOUND).send({ message: 'Карточки не найдены' });
-    }
+    res.send(cards);
   } catch (err) {
     next(err);
   }
@@ -71,9 +67,9 @@ const likeCard = async (req, res, next) => {
   } catch (err) {
     if (err.name === 'CastError') {
       res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Переданы некорректные данные' });
-      return;
+    } else {
+      next(err);
     }
-    next(err);
   }
 };
 
@@ -95,9 +91,9 @@ const dislikeCard = async (req, res, next) => {
   } catch (err) {
     if (err.name === 'CastError') {
       res.status(HTTP_STATUS_BAD_REQUEST).send({ message: 'Переданы некорректный id' });
-      return;
+    } else {
+      next(err);
     }
-    next(err);
   }
 };
 
