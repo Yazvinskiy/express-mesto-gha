@@ -1,6 +1,7 @@
 const Card = require('../models/card');
 const BadRequestError = require('../errors/BadRequestError');
 const NotFoundError = require('../errors/NotFoundError');
+const ForbiddenError = require('../errors/ForbiddenError');
 
 const getCards = async (req, res, next) => {
   try {
@@ -36,8 +37,10 @@ const deleteCard = async (req, res, next) => {
     if (card.owner == req.user._id) {
       Card.findByIdAndDelete(card)
         .then(res.send(card));
+    } else if (card == null) {
+      throw new NotFoundError('Карточка с указанным id не найдена');
     } else {
-      throw new NotFoundError('Карточка с указанным id не найден');
+      throw new ForbiddenError('Карточка с указанным id не является вашей');
     }
   } catch (err) {
     if (err.name === 'CastError') {
