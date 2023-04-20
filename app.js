@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const { errors } = require('celebrate');
 
 const app = express();
 const PORT = 3000;
@@ -13,18 +14,18 @@ mongoose.connect('mongodb://127.0.0.1:27017/mestodb').then(() => {
 
 app.use(express.json());
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '643001515dfef058139d206e',
-  };
-  next();
-});
 app.use('/', router);
-// app.use('/users', require('./routes/users'));
-// app.use('/cards', require('./routes/cards'));
+
+app.use(errors());
 
 app.use((err, req, res, next) => {
-  res.status(500).send({ message: 'Произошла ошибка' });
+  const { statusCode = 500, message } = err;
+  res.status(statusCode)
+    .send({
+      message: statusCode === 500
+        ? 'На сервере произошла ошибка'
+        : message,
+    });
 });
 
 app.listen(PORT, () => {
