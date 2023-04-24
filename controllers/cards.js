@@ -35,7 +35,7 @@ const deleteCard = async (req, res, next) => {
     if (!card) {
       throw new NotFoundError('Карточка с указанным id не найдена');
     }
-    if (card.owner != req.user._id) {
+    if (card.owner.toHexString() !== req.user._id) {
       throw new ForbiddenError('Карточка с указанным id не является вашей');
     }
     await Card.findByIdAndDelete(card);
