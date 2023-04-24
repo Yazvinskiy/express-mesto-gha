@@ -5,8 +5,7 @@ const ForbiddenError = require('../errors/ForbiddenError');
 
 const getCards = async (req, res, next) => {
   try {
-    const cards = await Card.find({})
-      .populate(['owner', 'likes']);
+    const cards = await Card.find({});
     res.send(cards);
   } catch (err) {
     next(err);
@@ -33,15 +32,14 @@ const deleteCard = async (req, res, next) => {
     const { cardId } = req.params;
 
     const card = await Card.findById(cardId);
-
-    if (card.owner == req.user._id) {
-      Card.findByIdAndDelete(card)
-        .then(res.send(card));
-    } else if (card == null) {
+    if (!card) {
       throw new NotFoundError('Карточка с указанным id не найдена');
-    } else {
+    }
+    if (card.owner != req.user._id) {
       throw new ForbiddenError('Карточка с указанным id не является вашей');
     }
+    await Card.findByIdAndDelete(card);
+    res.send(card);
   } catch (err) {
     if (err.name === 'CastError') {
       next(new BadRequestError('Переданы некорректные данные'));
