@@ -1,9 +1,6 @@
 const jwt = require('jsonwebtoken');
 const UnauthorizedError = require('../errors/UnauthorizedError');
 
-//npm run lint . --fix  был запущен и все возможные ошибки исправлены
-//(Unexpected dangling '_' in '__v'  no-underscore-dangle) - это не ошибка.
-
 module.exports = (req, res, next) => {
   // достаём авторизационный заголовок
   const { authorization } = req.headers;
